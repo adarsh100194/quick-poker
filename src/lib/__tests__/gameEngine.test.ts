@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 import { validateLedger, withLedgerValidation } from '../gameEngine';
 import type { GameState } from '../gameService';

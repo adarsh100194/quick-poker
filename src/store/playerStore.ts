@@ -5,10 +5,12 @@ interface PlayerState {
     playerName: string | null;
     isHost: boolean;
     currentGameCode: string | null;
+    soundEnabled: boolean;
     actions: {
         setPlayerSession: (id: string, name: string) => void;
         joinGameFlow: (code: string, isHost?: boolean) => void;
         leaveGame: () => void;
+        toggleSound: () => void;
     };
 }
 
@@ -17,10 +19,12 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     playerName: null,
     isHost: false,
     currentGameCode: null,
+    soundEnabled: true,
     actions: {
         setPlayerSession: (id, name) => set({ playerId: id, playerName: name }),
         joinGameFlow: (code, isHost = false) => set({ currentGameCode: code, isHost }),
         leaveGame: () => set({ currentGameCode: null, isHost: false }),
+        toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
     }
 }));
 
@@ -29,4 +33,5 @@ export const usePlayerId = () => usePlayerStore((state) => state.playerId);
 export const usePlayerName = () => usePlayerStore((state) => state.playerName);
 export const useIsHost = () => usePlayerStore((state) => state.isHost);
 export const useCurrentGameCode = () => usePlayerStore((state) => state.currentGameCode);
+export const useSoundEnabled = () => usePlayerStore((state) => state.soundEnabled);
 export const usePlayerActions = () => usePlayerStore((state) => state.actions);

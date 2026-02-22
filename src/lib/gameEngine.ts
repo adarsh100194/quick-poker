@@ -236,12 +236,15 @@ export function progressStreet(state: GameState): GameState {
         switch (draft.street) {
             case 'preflop':
                 draft.street = 'flop';
+                if (draft.deck) draft.boardCards.push(draft.deck.pop()!, draft.deck.pop()!, draft.deck.pop()!);
                 break;
             case 'flop':
                 draft.street = 'turn';
+                if (draft.deck) draft.boardCards.push(draft.deck.pop()!);
                 break;
             case 'turn':
                 draft.street = 'river';
+                if (draft.deck) draft.boardCards.push(draft.deck.pop()!);
                 break;
             case 'river':
                 draft.street = 'showdown';
@@ -251,6 +254,7 @@ export function progressStreet(state: GameState): GameState {
         // Setup first actor for new street (first active player after dealer)
         if (draft.street !== 'showdown' && draft.dealerId) {
             draft.currentTurnId = getNextActivePlayer(draft, draft.dealerId);
+            draft.lastTurnStartAt = Date.now();
         } else {
             draft.currentTurnId = null;
         }
@@ -320,6 +324,7 @@ export function handlePlayerAction(state: GameState, playerId: string, action: '
         }
 
         draft.currentTurnId = nextId;
+        draft.lastTurnStartAt = Date.now();
     });
 }
 

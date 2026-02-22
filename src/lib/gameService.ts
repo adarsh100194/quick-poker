@@ -58,6 +58,27 @@ export interface GameState {
     boardCards: string[];
     highestBet: number;
     totalChipsInPlay: number; // strict ledger rule tracking
+    deck: string[]; // remaining cards in the deck
+    lastTurnStartAt?: number; // timestamp for player timeout
+    lastHostPing?: number; // timestamp for host migration
+}
+
+const SUITS = ['h', 'd', 'c', 's'];
+const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+
+export function createDeck(): string[] {
+    const deck: string[] = [];
+    for (const s of SUITS) {
+        for (const r of RANKS) {
+            deck.push(r + s);
+        }
+    }
+    // Fisher-Yates shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    return deck;
 }
 
 export async function createGameRoom(
@@ -100,7 +121,10 @@ export async function createGameRoom(
         street: 'preflop',
         boardCards: [],
         highestBet: 0,
-        totalChipsInPlay: settings.initialStack
+        totalChipsInPlay: settings.initialStack,
+        deck: [],
+        lastTurnStartAt: Date.now(),
+        lastHostPing: Date.now()
     };
 
     await set(gameRef, initialState);
@@ -183,5 +207,30 @@ export async function submitPlayerAction(
     }
 
     // 3. Write back to Firebase
+    await set(gameRef, state);
+}
+
+import { initializeRound } from './gameEngine';
+
+export async function startNextRound(code: string) {
+    const gameRef = ref(database, `games/${code}`);
+    const snapshot = await get(gameRef);
+    if (!snapshot.exists()) return;
+
+    let state = snapshot.val() as GameState;
+    if (state.status === 'playing' && state.street !== 'showdown' && state.currentTurnId !== null) return;
+
+    state.status = 'playing';
+    state = initializeRound(state);
+    state.deck = createDeck();
+
+    for (const pid of state.playerOrder) {
+        const p = state.players[pid];
+        if (p.status === 'active' || p.status === 'all-in') {
+            p.cards = [state.deck.pop()!, state.deck.pop()!];
+        }
+    }
+
+    state.boardCards = [];
     await set(gameRef, state);
 }

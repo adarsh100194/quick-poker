@@ -1,21 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ref, onValue, off } from 'firebase/database';
 import { database } from '../lib/firebase';
 import type { GameState } from '../lib/gameService';
-import { submitPlayerAction } from '../lib/gameService';
+import { submitPlayerAction, startNextRound } from '../lib/gameService';
 import { usePlayerStore } from '../store/playerStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Volume2, VolumeX } from 'lucide-react';
+import { useSoundEffects } from '../hooks/useSoundEffects';
 
 export default function GameTable() {
     const { code } = useParams();
     const navigate = useNavigate();
     const { playerId } = usePlayerStore();
+    const isHost = usePlayerStore(state => state.isHost);
+    const soundEnabled = usePlayerStore(state => state.soundEnabled);
+    const toggleSound = usePlayerStore(state => state.actions.toggleSound);
+    const { playSound } = useSoundEffects();
+
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [raiseAmount, setRaiseAmount] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [recommendation, setRecommendation] = useState<string>('');
     const [isThinking, setIsThinking] = useState(false);
+
+    const previousTurnRef = useRef<string | null>(null);
+    const previousStreetRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!playerId || !code) {
@@ -75,6 +85,84 @@ export default function GameTable() {
         }
     }, [gameState?.currentTurnId, playerId, gameState, recommendation, isThinking]);
 
+    // Audio Hook
+    useEffect(() => {
+        if (gameState) {
+            if (gameState.currentTurnId === playerId && previousTurnRef.current !== playerId) {
+                playSound('turn');
+            }
+            if (gameState.street !== previousStreetRef.current && gameState.street !== 'preflop') {
+                playSound('card');
+            }
+            if (gameState.street === 'showdown' && previousStreetRef.current !== 'showdown') {
+                playSound('win');
+            }
+            previousTurnRef.current = gameState.currentTurnId;
+            previousStreetRef.current = gameState.street;
+        }
+    }, [gameState, playerId, playSound]);
+
+    // Host Auto-Progression Hook
+    useEffect(() => {
+        if (gameState && isHost && gameState.street === 'showdown' && gameState.currentTurnId === null && code) {
+            const timer = setTimeout(() => {
+                startNextRound(code);
+            }, 7000); // 7 second showdown pause
+            return () => clearTimeout(timer);
+        }
+    }, [gameState?.street, gameState?.currentTurnId, isHost, code]);
+
+    // Host Ping Update
+    useEffect(() => {
+        if (!isHost || !code) return;
+        const interval = setInterval(() => {
+            const dbRef = ref(database, `games/${code}`);
+            import('firebase/database').then(({ update }) => {
+                update(dbRef, { lastHostPing: Date.now() }).catch(console.error);
+            });
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isHost, code]);
+
+    // AFK Player Auto-Fold (Host Only)
+    useEffect(() => {
+        if (!isHost || !gameState || !code) return;
+        if (gameState.currentTurnId && gameState.lastTurnStartAt && gameState.street !== 'showdown') {
+            const interval = setInterval(() => {
+                // 45 seconds to act
+                if (Date.now() - gameState.lastTurnStartAt! > 45000) {
+                    submitPlayerAction(code, gameState.currentTurnId!, 'fold').catch(console.error);
+                }
+            }, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [isHost, gameState?.currentTurnId, gameState?.lastTurnStartAt, gameState?.street, code]);
+
+    // Host Migration (Non-hosts check if host is dead)
+    useEffect(() => {
+        if (isHost || !gameState || !code || !playerId) return;
+        const interval = setInterval(() => {
+            const now = Date.now();
+            if (gameState.lastHostPing && (now - gameState.lastHostPing > 15000)) {
+                const activeIds = gameState.playerOrder.filter(id => {
+                    const st = gameState.players[id]?.status;
+                    return st !== 'eliminated' && st !== 'waiting';
+                }).sort();
+
+                if (activeIds.length > 0 && activeIds[0] === playerId) {
+                    usePlayerStore.getState().actions.joinGameFlow(code, true);
+                    import('firebase/database').then(({ update }) => {
+                        update(ref(database, `games/${code}`), {
+                            hostId: playerId,
+                            lastHostPing: Date.now()
+                        }).catch(console.error);
+                    });
+                }
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isHost, gameState?.lastHostPing, gameState?.playerOrder, code, playerId]);
+
     if (!gameState) {
         return (
             <div className="flex flex-col min-h-[100dvh] bg-slate-900 items-center justify-center">
@@ -131,8 +219,13 @@ export default function GameTable() {
                     <span className="text-slate-400 text-xs font-bold uppercase tracking-wider block">Round {gameState.round || 1}</span>
                     <span className="text-white font-mono">{gameState.settings.smallBlind} / {gameState.settings.bigBlind}</span>
                 </div>
-                <div className="text-right">
-                    <Link to="/" className="text-xs text-rose-400 font-bold px-3 py-1 bg-rose-950/50 rounded-full border border-rose-900 mb-1 inline-block">Leave Game</Link>
+                <div className="text-right flex flex-col items-end">
+                    <div className="flex items-center gap-2 mb-1">
+                        <button onClick={toggleSound} className="p-1.5 bg-slate-800 rounded-full border border-slate-700">
+                            {soundEnabled ? <Volume2 size={14} className="text-slate-300" /> : <VolumeX size={14} className="text-slate-500" />}
+                        </button>
+                        <Link to="/" className="text-xs text-rose-400 font-bold px-3 py-1 bg-rose-950/50 rounded-full border border-rose-900 inline-block">Leave Game</Link>
+                    </div>
                     <div className="text-slate-500 text-xs font-mono block">Code: {code}</div>
                 </div>
             </header>
@@ -273,6 +366,10 @@ export default function GameTable() {
 
                         const handleAction = async (action: 'fold' | 'check' | 'call' | 'raise', amt = 0) => {
                             if (isSubmitting || !code || !playerId) return;
+
+                            if (action === 'fold') playSound('fold');
+                            else playSound('chip');
+
                             setIsSubmitting(true);
                             try {
                                 await submitPlayerAction(code, playerId, action, amt);
