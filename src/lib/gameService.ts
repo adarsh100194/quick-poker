@@ -28,6 +28,15 @@ export interface Player {
     position: 'dealer' | 'sb' | 'bb' | 'utg' | 'none'; // simplified
     isHost: boolean;
     avatar: number; // index for a random avatar color or image
+
+    // In-game state
+    cards?: [string, string];
+    currentBet?: number; // amount bet on the current street
+}
+
+export interface SidePot {
+    amount: number;
+    eligiblePlayerIds: string[];
 }
 
 export interface GameState {
@@ -38,11 +47,17 @@ export interface GameState {
     createdAt: object; // ServerTimestamp
     hostId: string;
 
-    // These will be populated once the game status transitions to 'playing'
-    pot?: number;
-    currentTurnId?: string;
-    round?: number;
-    street?: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
+    // Playing State
+    playerOrder: string[]; // fixed seating order
+    pot: number;
+    sidePots: SidePot[];
+    currentTurnId: string | null;
+    dealerId: string | null;
+    round: number;
+    street: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
+    boardCards: string[];
+    highestBet: number;
+    totalChipsInPlay: number; // strict ledger rule tracking
 }
 
 export async function createGameRoom(
@@ -75,7 +90,17 @@ export async function createGameRoom(
                 isHost: true,
                 avatar: Math.floor(Math.random() * 10)
             }
-        }
+        },
+        playerOrder: [],
+        pot: 0,
+        sidePots: [],
+        currentTurnId: null,
+        dealerId: null,
+        round: 0,
+        street: 'preflop',
+        boardCards: [],
+        highestBet: 0,
+        totalChipsInPlay: settings.initialStack
     };
 
     await set(gameRef, initialState);
