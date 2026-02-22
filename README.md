@@ -1,24 +1,73 @@
-# QuickPoker Live
+# React + TypeScript + Vite
 
-**“The fastest way to host a private poker game online.”**
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-A lightweight mobile-first web poker app that lets anyone start a private Texas Hold’em game instantly, share an invite code, and track chips/pot in real time.
+Currently, two official plugins are available:
 
-## Core Features
-- **No Download Required:** Play directly in the browser.
-- **Instant Invite Code:** Start a game and share the 6-character code immediately.
-- **Client-Side Host Logic:** The host device acts as the calculation engine.
-- **Clear Ledger Visibility:** Enforced zero-confusion balance and pot tracking.
-- **Live Recommendation Engine:** Optional heuristic-based advice on every turn.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Tech Stack
-- Frontend: React (Next.js or Vite) + TailwindCSS
-- State/Real-time Sync: Firebase Realtime Database
-- Animations: Framer Motion
-- Deployment: Vercel / Netlify
+## React Compiler
 
-## Documentation
-- [PRD (Product Requirements Document)](./PRD.MD)
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Getting Started
-(Getting started instructions will be added here once the project initialization is complete)
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
