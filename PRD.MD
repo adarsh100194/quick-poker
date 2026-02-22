@@ -25,7 +25,7 @@ A lightweight mobile-first web poker app that lets anyone:
 - Content creators running games live
 
 ### 3️⃣ CORE FEATURES
-**A. CREATE NEW GAME FLOW**
+**A. CREATE NEW GAME FLOW (Home Screen)**
 - **Screen 1: Start Game**
   - Inputs:
     - Game Name (optional)
@@ -39,6 +39,9 @@ A lightweight mobile-first web poker app that lets anyone:
     - Unique Invite Code (6-character alphanumeric)
     - Share button (WhatsApp / Copy link)
     - Game Lobby page
+  - **Footer Branding (Must be visible on this Home screen):**
+    - Text: `© 2026 Quick Poker. All Rights Reserved.`
+    - Text: `app designed, developed & managed by CompleteDigi` (with link to `https://completedigi.com`)
 
 **B. JOIN GAME FLOW**
 - **Screen:**
