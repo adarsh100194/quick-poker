@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# 🃏 QuickPoker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+QuickPoker is a real-time, lightweight Texas Hold'em web application designed for mobile-first play. It eliminates the need for complex poker servers by leveraging **Firebase Realtime Database** for state synchronization and relying on the **Host Client** to run the game engine.
 
-Currently, two official plugins are available:
+**🎮 Play Online:** [completedigi.in/quick-poker](https://completedigi.in/quick-poker)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![QuickPoker Preview](https://github.com/adarsh100194/quick-poker/assets/12345/preview.png) *(Preview Placeholder)*
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📖 Documentation
+QuickPoker is fully open-source. Whether you're a player looking to host a fast game with friends, or a developer looking to understand the real-time serverless architecture, we've carefully documented everything you need to know.
 
-## Expanding the ESLint configuration
+1. **[Technical Specification Document (TSD)](TSD.md)** - Learn about the system lifecycle, "Host-driven" state calculation model, the `pokersolver` validations, and how we handle edge cases without a dedicated backend server.
+2. **[Deployment & Local Setup Guide](DEPLOYMENT.md)** - Instructions on how to run QuickPoker locally on your own machine, how to configure Firebase, and how to instantly deploy your own instance to Vercel.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## ✨ Features
+*   **Host-Driven Architecture**: The player who creates the game executes all game rules inside their browser—no Node.js server required!
+*   **Strict Ledger State**: A built-in validation watcher that mathematically ensures chips can never be accidentally duplicated or lost due to network lag. 
+*   **AI Recommendations**: Unsure what to do? The Host client is hooked up to an OpenAI GPT-4o serverless hook that reads your odds and gives you a 1-sentence recommended action!
+*   **Mobile-First PWA**: Add it directly to your iOS or Android home screen for an immersive, full-screen poker experience featuring custom Web Audio API synthesized sound effects.
+*   **Smart Edge Cases**: Automatically promotes the next player to Host if the creator goes offline. AFK players automatically fold to keep the game moving. Side-pots are mathematically perfect.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🛠️ Built With
+*   **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion
+*   **State / Backend**: Firebase Realtime Database
+*   **Serverless**: Vercel Serverless Functions (`api/recommend.ts`)
+*   **Libraries**: `Zustand` (Global App State), `lucide-react` (Icons), `pokersolver` (Hand Evaluation)
+
+### 💻 Local Testing Quick-Start
+To test locally, read the full [Setup Guide](DEPLOYMENT.md).
+```bash
+git clone https://github.com/adarsh100194/quick-poker.git
+cd quick-poker
+npm install
+cp .env.example .env
+# Fill in your Firebase config in .env
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+<p align="center">
+  <i>© 2026 Quick Poker. All Rights Reserved. App designed, developed & managed by CompleteDigi.</i>
+</p>
