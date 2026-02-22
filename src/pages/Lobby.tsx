@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ref, onValue, off } from 'firebase/database';
 import { database } from '../lib/firebase';
 import type { GameState } from '../lib/gameService';
+import { startNextRound } from '../lib/gameService';
 import { usePlayerStore } from '../store/playerStore';
 import { Copy, Check, Users, Play } from 'lucide-react';
 
@@ -14,6 +15,7 @@ export default function Lobby() {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState('');
+    const [isStarting, setIsStarting] = useState(false);
 
     // Protect route
     useEffect(() => {
@@ -59,10 +61,15 @@ export default function Lobby() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleStartGame = () => {
-        // In actual implementation (Phase 2), this will update Firebase status to 'playing'
-        // For now, it just navigates locally to the stub
-        navigate(`/table/${code}`);
+    const handleStartGame = async () => {
+        if (!code || isStarting) return;
+        setIsStarting(true);
+        try {
+            await startNextRound(code);
+        } catch (e: any) {
+            setError(e.message || 'Failed to start game');
+            setIsStarting(false);
+        }
     };
 
     if (error) {
@@ -150,10 +157,10 @@ export default function Lobby() {
                 {isHost ? (
                     <button
                         onClick={handleStartGame}
-                        disabled={playerCount < 2}
+                        disabled={playerCount < 2 || isStarting}
                         className="w-full text-center flex items-center justify-center py-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 transition-colors shadow-[0_0_30px_rgba(5,150,105,0.3)] text-white font-bold text-lg disabled:opacity-50 disabled:shadow-none"
                     >
-                        {playerCount < 2 ? 'Waiting for players...' : (
+                        {playerCount < 2 ? 'Waiting for players...' : isStarting ? 'Starting...' : (
                             <><Play className="w-6 h-6 mr-2 fill-current" /> Start Game</>
                         )}
                     </button>

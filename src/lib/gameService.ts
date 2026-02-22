@@ -112,7 +112,7 @@ export async function createGameRoom(
                 avatar: Math.floor(Math.random() * 10)
             }
         },
-        playerOrder: [],
+        playerOrder: [hostId],
         pot: 0,
         sidePots: [],
         currentTurnId: null,
@@ -165,8 +165,13 @@ export async function joinGameRoom(
         avatar: Math.floor(Math.random() * 10)
     };
 
-    await update(ref(database, `games/${code}/players`), {
-        [playerId]: newPlayer
+    const playerOrder = gameState.playerOrder || [];
+    playerOrder.push(playerId);
+
+    await update(ref(database, `games/${code}`), {
+        [`players/${playerId}`]: newPlayer,
+        playerOrder,
+        totalChipsInPlay: (gameState.totalChipsInPlay || gameState.settings.initialStack) + gameState.settings.initialStack
     });
 
     return gameState;
