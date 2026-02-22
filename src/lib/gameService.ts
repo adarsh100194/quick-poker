@@ -147,3 +147,41 @@ export async function joinGameRoom(
 
     return gameState;
 }
+
+import { handlePlayerAction, isBettingRoundComplete, progressStreet, evaluateShowdown } from './gameEngine';
+
+export async function submitPlayerAction(
+    code: string,
+    playerId: string,
+    action: 'fold' | 'call' | 'raise' | 'check',
+    amount: number = 0
+) {
+    const gameRef = ref(database, `games/${code}`);
+    const snapshot = await get(gameRef);
+    if (!snapshot.exists()) throw new Error("Game not found");
+
+    let state = snapshot.val() as GameState;
+
+    // 1. Apply the action
+    state = handlePlayerAction(state, playerId, action, amount);
+
+    // 2. Check if the betting round is complete
+    if (state.currentTurnId === null || isBettingRoundComplete(state)) {
+        // If hand ended because everyone folded OR if everyone called and round is complete
+        if (state.currentTurnId === null) {
+            // Hand over, evaluate winners
+            state = evaluateShowdown(state);
+        } else {
+            // Progress to next street
+            state = progressStreet(state);
+
+            // If it progressed to showdown
+            if (state.street === 'showdown') {
+                state = evaluateShowdown(state);
+            }
+        }
+    }
+
+    // 3. Write back to Firebase
+    await set(gameRef, state);
+}
