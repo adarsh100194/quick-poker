@@ -81,3 +81,44 @@ export async function createGameRoom(
     await set(gameRef, initialState);
     return code;
 }
+
+export async function joinGameRoom(
+    code: string,
+    playerId: string,
+    playerName: string
+): Promise<GameState> {
+    const gameRef = ref(database, `games/${code}`);
+    const snapshot = await get(gameRef);
+
+    if (!snapshot.exists()) {
+        throw new Error('Game not found. Please check your invite code.');
+    }
+
+    const gameState = snapshot.val() as GameState;
+
+    if (gameState.status !== 'lobby') {
+        throw new Error('Game has already started or finished.');
+    }
+
+    const currentPlayersCount = Object.keys(gameState.players || {}).length;
+    if (currentPlayersCount >= gameState.settings.maxPlayers) {
+        throw new Error('Game is full.');
+    }
+
+    // Add the new player
+    const newPlayer: Player = {
+        id: playerId,
+        name: playerName,
+        balance: gameState.settings.initialStack,
+        status: 'waiting',
+        position: 'none',
+        isHost: false,
+        avatar: Math.floor(Math.random() * 10)
+    };
+
+    await update(ref(database, `games/${code}/players`), {
+        [playerId]: newPlayer
+    });
+
+    return gameState;
+}

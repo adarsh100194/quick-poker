@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createGameRoom, GameSettings } from '../lib/gameService';
+import { createGameRoom } from '../lib/gameService';
+import type { GameSettings } from '../lib/gameService';
 import { usePlayerStore } from '../store/playerStore';
 import { Loader2 } from 'lucide-react';
+
 
 export default function CreateGame() {
     const navigate = useNavigate();
