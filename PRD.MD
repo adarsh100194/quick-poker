@@ -129,8 +129,8 @@ At every decision point:
   - Pot odds
   - Hand strength tier
   - Number of players
-- No solver complexity.
-- Heuristic-based engine.
+- Powered by ChatGPT API.
+- Each player evaluates their private recommendation separately.
 - Can be toggle ON/OFF.
 
 ### 9️⃣ SOUND EFFECTS

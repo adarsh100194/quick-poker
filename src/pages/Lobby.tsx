@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ref, onValue, off } from 'firebase/database';
 import { database } from '../lib/firebase';
-import { GameState } from '../lib/gameService';
+import type { GameState } from '../lib/gameService';
 import { usePlayerStore } from '../store/playerStore';
 import { Copy, Check, Users, Play } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export default function Lobby() {
         const gameRef = ref(database, `games/${code}`);
 
         // Subscribe to changes
-        const unsubscribe = onValue(gameRef, (snapshot) => {
+        onValue(gameRef, (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val() as GameState;
                 setGameState(data);
